@@ -102,7 +102,11 @@ The testbench is **self-checking**. A **scoreboard** records every write the FIF
 
 To test another setting, change the parameters at the top of `sim/tb_sc_fifo.v`.
 
-<!-- WAVEFORM: images/waveform.png goes here -->
+### Waveform (full run, READ_LATENCY = 1)
+
+![Full simulation waveform](images/waveform_full.jpg)
+
+Four fill/drain cycles (`FFFF`, `0000`, `AAAA`/`5555`, `0000`–`001F`): `full` pulses at the end of each fill, `empty` at the end of each drain, `valid` follows `read_enable` by one clock, `DEAD` (the overflow write) never appears on `data_out`, and `errors` stays `0` for the whole run.
 
 ## AI use (citation)
 
