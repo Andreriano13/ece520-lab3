@@ -1,0 +1,6 @@
+vivado_proj/
+*.jou
+*.log
+*.str
+.Xil/
+xsim.dir/
