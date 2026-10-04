@@ -47,6 +47,13 @@ module tb_sc_fifo;
     integer exp_head = 0, exp_tail = 0;   // tail = where the next write is noted, head = next one to check
     integer errors = 0, checks = 0;
 
+    // results go to the console AND to test_results.txt (same trick as Nanas's tb_mult.v)
+    integer raw_fd, results_fd;
+    initial begin
+        raw_fd = $fopen("test_results.txt");
+        results_fd = raw_fd | 1;
+    end
+
     // note down every write the FIFO actually ACCEPTS
     always @(posedge clk) begin
         if (!srst && write_enable && !full) begin      // BLANK 3: when is a write accepted? (same as wr_ok)
@@ -61,7 +68,7 @@ module tb_sc_fifo;
             checks = checks + 1;
             if (data_out !== expected[exp_head]) begin
                 errors = errors + 1;
-                $display("FAIL t=%0t: data_out=%h expected=%h", $time, data_out, expected[exp_head]);
+                $fdisplay(results_fd, "FAIL t=%0t: data_out=%h expected=%h", $time, data_out, expected[exp_head]);
             end
             exp_head = exp_head + 1;
         end
@@ -74,7 +81,7 @@ module tb_sc_fifo;
             checks = checks + 1;
             if (!cond) begin
                 errors = errors + 1;
-                $display("FAIL t=%0t: %0s", $time, what);
+                $fdisplay(results_fd, "FAIL t=%0t: %0s", $time, what);
             end
         end
     endtask
@@ -163,11 +170,12 @@ module tb_sc_fifo;
         // final score
         if (exp_head != exp_tail) begin
             errors = errors + 1;
-            $display("FAIL: %0d writes never came out", exp_tail - exp_head);
+            $fdisplay(results_fd, "FAIL: %0d writes never came out", exp_tail - exp_head);
         end
-        if (errors == 0) $display("PASS: %0d checks, 0 errors (RL=%0d AE=%0d AF=%0d)",
+        if (errors == 0) $fdisplay(results_fd, "PASS: %0d checks, 0 errors (RL=%0d AE=%0d AF=%0d)",
                                   checks, READ_LATENCY, ALMOST_EMPTY_THRESHOLD, ALMOST_FULL_THRESHOLD);
-        else             $display("FAIL: %0d errors in %0d checks", errors, checks);
+        else             $fdisplay(results_fd, "FAIL: %0d errors in %0d checks", errors, checks);
+        $fclose(raw_fd);
         $finish;
     end
 
