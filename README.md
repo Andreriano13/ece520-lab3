@@ -1,6 +1,6 @@
 # ECE 520 Lab 3: Single-Clock BRAM FIFO
 
-Andres Riano · ECE 520 · Fall 2026 · Zybo Z7-10 (`xc7z010clg400-1`) · Vivado 2023.2
+Andres Riano · ECE 520 · Fall 2026 · Zybo board · Vivado
 
 A parameterized single-clock FIFO in Verilog. Its memory is inferred as **Block RAM** (1 × RAMB18, 0 LUTRAM). It has a configurable **read latency**, and it is checked by a **self-checking testbench**.
 
@@ -58,22 +58,18 @@ The result is printed in the console and saved to `sim/test_results.txt`.
 
 ## Block diagram
 
-```mermaid
-flowchart LR
-    din[data_in] --> MEM
-    we[write_enable] --> WQ{{"wr_ok = write_enable AND NOT full"}}
-    re[read_enable] --> RQ{{"rd_ok = read_enable AND NOT empty"}}
-    WQ --> WP["write pointer wp (5 bits)"]
-    RQ --> RP["read pointer rp (5 bits)"]
-    WQ --> CNT["count (6 bits): +1 write, −1 read"]
-    RQ --> CNT
-    WP -->|write address| MEM[("BRAM mem[0:31] × 16 bits")]
-    RP -->|read address| MEM
-    MEM --> P0["stage 0 (BRAM output reg)"] --> PN["stages 1 … READ_LATENCY−1"] --> dout[data_out]
-    RQ --> V0[valid stage 0] --> VN[valid stages] --> vld[valid]
-    CNT --> FL["flags: empty · full · almost_empty · almost_full"]
-    CNT --> dc[data_count]
-```
+Vivado RTL schematic of `sc_fifo` (RTL Analysis → Open Elaborated Design → Schematic), defaults with READ_LATENCY = 1:
+
+![Vivado RTL schematic of sc_fifo](images/block_diagram_vivado.jpg)
+
+| Block in the schematic | What it is |
+|---|---|
+| `wr_ok_i`, `rd_ok_i` (AND + INV, bottom left) | the qualified enables: write AND NOT full, read AND NOT empty |
+| `wp_reg`, `rp_reg` + adders | write and read pointers (5 bits), +1 on each accepted write or read |
+| `mem_reg` (RTL_RAM) | the 32 × 16 memory: write port (WA2/WD2/WE2), read port (RA1/RO1). Inferred as BRAM |
+| `count_reg` + add/sub + muxes | the 6-bit word count: +1, −1 or hold |
+| comparators (`=`, `<=`, `>=`) | empty, full, almost_empty, almost_full, all decoded from the count |
+| `dpipe_reg`, `vpipe_reg` | the read-latency registers for `data_out` and `valid` (one stage when READ_LATENCY = 1) |
 
 ## Test cases (sim/tb_sc_fifo.v)
 
